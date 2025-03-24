@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
@@ -13,7 +13,7 @@ const notion = new Client({
 });
 
 // Express app for Railway hosting
-const app = express();
+const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || "3000", 10); // Railway dynamically assigns a port
 
 app.use(express.json());
@@ -26,7 +26,7 @@ app.get("/api/status", (req: Request, res: Response) => {
 // Define tool handlers to prevent undefined errors
 const toolHandlers: Record<string, (args: any) => Promise<any>> = {
 	search_pages: async ({ query }) => {
-		console.log(`Searching Notion pages for: ${query}`);
+		console.log(`🔍 Searching Notion pages for: ${query}`);
 		const response = await notion.search({
 			query,
 			filter: { property: "object", value: "page" },
@@ -36,7 +36,7 @@ const toolHandlers: Record<string, (args: any) => Promise<any>> = {
 	},
 
 	read_page: async ({ pageId }) => {
-		console.log(`Reading Notion page: ${pageId}`);
+		console.log(`📖 Reading Notion page: ${pageId}`);
 		const page = await notion.pages.retrieve({ page_id: pageId });
 		return page;
 	},
@@ -82,33 +82,33 @@ const server = new Server(
 	},
 	{
 		capabilities: {
-			tools: {},
+			tools: TOOL_DEFINITIONS,
 		},
 	},
 );
 
 // Register tool handlers
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-	console.log("Tools requested by client");
+	console.log("🛠️ Tools requested by client");
 	return { tools: TOOL_DEFINITIONS };
 });
 
-server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
 	const { name, arguments: args } = request.params;
 	try {
 		const handler = toolHandlers[name as keyof typeof toolHandlers];
 		if (!handler) {
-			throw new Error(`Unknown tool: ${name}`);
+			throw new Error(`❌ Unknown tool: ${name}`);
 		}
 		return await handler(args);
 	} catch (error) {
-		console.error(`Error executing tool ${name}:`, error);
+		console.error(`⚠️ Error executing tool ${name}:`, error);
 		throw error;
 	}
 });
 
 // Start Express Server
-app.listen(PORT, async () => {
+app.listen(PORT, () => {
 	console.log(`🚀 Notion MCP Server is running on port ${PORT}`);
 });
 
