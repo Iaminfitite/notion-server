@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { Client } from "@notionhq/client";
-import { z } from "zod";
 
 // Load environment variables
 dotenv.config();
@@ -15,7 +14,7 @@ const notion = new Client({
 
 // Express app for Railway hosting
 const app = express();
-const PORT = process.env.PORT || 3000; // Railway dynamically assigns a port
+const PORT: number = parseInt(process.env.PORT || "3000", 10); // Railway dynamically assigns a port
 
 app.use(express.json());
 
