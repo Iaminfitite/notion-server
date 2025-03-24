@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
@@ -20,9 +20,28 @@ const PORT = process.env.PORT || 3000; // Railway dynamically assigns a port
 app.use(express.json());
 
 // Status endpoint to check if the server is running
-app.get("/api/status", (req, res) => {
+app.get("/api/status", (req: Request, res: Response) => {
 	res.json({ status: "Notion MCP Server is running", port: PORT });
 });
+
+// Define tool handlers to prevent undefined errors
+const toolHandlers: Record<string, (args: any) => Promise<any>> = {
+	search_pages: async ({ query }) => {
+		console.log(`Searching Notion pages for: ${query}`);
+		const response = await notion.search({
+			query,
+			filter: { property: "object", value: "page" },
+			page_size: 10,
+		});
+		return response.results;
+	},
+
+	read_page: async ({ pageId }) => {
+		console.log(`Reading Notion page: ${pageId}`);
+		const page = await notion.pages.retrieve({ page_id: pageId });
+		return page;
+	},
+};
 
 // Tool definitions
 const TOOL_DEFINITIONS = [
